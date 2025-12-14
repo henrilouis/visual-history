@@ -13,60 +13,164 @@ export async function getHistory(filter: string = "") {
   });
 }
 
+// Helper to get date key
+function getDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+// Helper to get hour key
+function getHourKey(date: Date): string {
+  return String(date.getHours()).padStart(2, "0");
+}
+
 export type HistoryByDay = {
   [day: string]: chrome.history.HistoryItem[];
 };
 
-export async function getHistoryByDay(
-  filter: string = "",
-  emptyDays: boolean = false
-): Promise<HistoryByDay> {
-  const getDateKey = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+export type HistoryByDayAndHour = {
+  [day: string]: {
+    [hour: string]: chrome.history.HistoryItem[];
   };
+};
 
-  const history = await getHistory(filter);
+// Pure grouping function - works on already-fetched data
+export function groupHistoryByDay(
+  history: chrome.history.HistoryItem[]
+): HistoryByDay {
   const grouped: HistoryByDay = {};
 
-  // Group history items by day
   for (const item of history) {
     if (!item.lastVisitTime) continue;
-
     const dayKey = getDateKey(new Date(item.lastVisitTime));
     (grouped[dayKey] ??= []).push(item);
-  }
-
-  // Determine date range and fill empty days if needed
-  if (emptyDays) {
-    const allHistory = filter ? await getHistory("") : history;
-    const timestamps = allHistory
-      .map((item) => item.lastVisitTime)
-      .filter((t): t is number => t !== undefined);
-
-    if (timestamps.length > 0) {
-      const startDate = new Date(Math.min(...timestamps));
-      const endDate = new Date(Math.max(...timestamps));
-
-      // Adjust to start on Monday
-      startDate.setDate(startDate.getDate() - ((startDate.getDay() + 6) % 7));
-
-      // Fill all days in range
-      for (
-        let current = new Date(startDate);
-        current <= endDate;
-        current.setDate(current.getDate() + 1)
-      ) {
-        grouped[getDateKey(current)] ??= [];
-      }
-    }
   }
 
   // Sort items within each day (newest first)
   for (const items of Object.values(grouped)) {
     items.sort((a, b) => (b.lastVisitTime || 0) - (a.lastVisitTime || 0));
+  }
+
+  return grouped;
+}
+
+// Pure grouping function - by day and hour
+export function groupHistoryByDayAndHour(
+  history: chrome.history.HistoryItem[]
+): HistoryByDayAndHour {
+  const grouped: HistoryByDayAndHour = {};
+
+  for (const item of history) {
+    if (!item.lastVisitTime) continue;
+    const date = new Date(item.lastVisitTime);
+    const dayKey = getDateKey(date);
+    const hourKey = getHourKey(date);
+
+    (grouped[dayKey] ??= {})[hourKey] ??= [];
+    grouped[dayKey][hourKey].push(item);
+  }
+
+  // Sort items within each hour (newest first)
+  for (const day of Object.values(grouped)) {
+    for (const items of Object.values(day)) {
+      items.sort((a, b) => (b.lastVisitTime || 0) - (a.lastVisitTime || 0));
+    }
+  }
+
+  return grouped;
+}
+
+// Fill empty days in a date range
+export function fillEmptyDays(
+  grouped: HistoryByDay,
+  allHistory: chrome.history.HistoryItem[]
+): HistoryByDay {
+  const timestamps = allHistory
+    .map((item) => item.lastVisitTime)
+    .filter((t): t is number => t !== undefined);
+
+  if (timestamps.length === 0) return grouped;
+
+  const startDate = new Date(Math.min(...timestamps));
+  const endDate = new Date(Math.max(...timestamps));
+
+  // Adjust to start on Monday
+  startDate.setDate(startDate.getDate() - ((startDate.getDay() + 6) % 7));
+
+  // Fill all days in range
+  for (
+    let current = new Date(startDate);
+    current <= endDate;
+    current.setDate(current.getDate() + 1)
+  ) {
+    grouped[getDateKey(current)] ??= [];
+  }
+
+  return grouped;
+}
+
+// Fill empty hours (00-23) for each day
+export function fillEmptyHours(
+  grouped: HistoryByDayAndHour,
+  allHistory: chrome.history.HistoryItem[]
+): HistoryByDayAndHour {
+  const timestamps = allHistory
+    .map((item) => item.lastVisitTime)
+    .filter((t): t is number => t !== undefined);
+
+  if (timestamps.length === 0) return grouped;
+
+  const startDate = new Date(Math.min(...timestamps));
+  const endDate = new Date(Math.max(...timestamps));
+
+  // Fill all days and hours in range
+  for (
+    let current = new Date(startDate);
+    current <= endDate;
+    current.setDate(current.getDate() + 1)
+  ) {
+    const dayKey = getDateKey(current);
+    grouped[dayKey] ??= {};
+
+    // Fill all 24 hours for each day
+    for (let hour = 0; hour < 24; hour++) {
+      const hourKey = String(hour).padStart(2, "0");
+      grouped[dayKey][hourKey] ??= [];
+    }
+  }
+
+  return grouped;
+}
+
+// Convenience function for common use case
+export async function getHistoryByDay(
+  filter: string = "",
+  emptyDays: boolean = false
+): Promise<HistoryByDay> {
+  const history = await getHistory(filter);
+  let grouped = groupHistoryByDay(history);
+
+  if (emptyDays) {
+    const allHistory = filter ? await getHistory("") : history;
+    grouped = fillEmptyDays(grouped, allHistory);
+  }
+
+  return grouped;
+}
+
+// New convenience function for hourly grouping
+export async function getHistoryByDayAndHour(
+  filter: string = "",
+  emptyHours: boolean = false
+): Promise<HistoryByDayAndHour> {
+  const history = await getHistory(filter);
+  let grouped = groupHistoryByDayAndHour(history);
+
+  if (emptyHours) {
+    const allHistory = filter ? await getHistory("") : history;
+    grouped = fillEmptyHours(grouped, allHistory);
   }
 
   return grouped;

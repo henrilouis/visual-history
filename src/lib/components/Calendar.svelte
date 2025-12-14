@@ -11,9 +11,11 @@
   let {
     data,
     selectedMoments = $bindable(),
+    isLoading = false,
   }: {
-    data: Promise<HistoryByDay>;
+    data: HistoryByDay;
     selectedMoments: string[];
+    isLoading?: boolean;
   } = $props();
 
   type WeekData = {
@@ -98,58 +100,54 @@
   const scrollRight: Attachment = (element) => {
     element.scrollLeft = element.scrollWidth;
   };
+
+  const { weeks, months } = $derived(organizeCalendar(data));
 </script>
 
-{#await data}
-  <div id="calendar">
-    <p>Loading calendar...</p>
-  </div>
-{:then historyByDay}
-  {@const { weeks, months } = organizeCalendar(historyByDay)}
-  <div
-    id="calendar"
-    class={selectedMoments.length > 0 ? "filtered" : ""}
-    {@attach scrollRight}
-  >
-    <table>
-      <thead>
+<div
+  id="calendar"
+  class:filtered={selectedMoments.length > 0}
+  class:loading={isLoading}
+  {@attach scrollRight}
+>
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        {#each months as month}
+          <th colspan={month.span}>{month.name}</th>
+        {/each}
+      </tr>
+    </thead>
+    <tbody>
+      {#each weeks as week}
         <tr>
-          <th></th>
-          {#each months as month}
-            <th colspan={month.span}>{month.name}</th>
+          <th>{week.dayName}</th>
+          {#each week.days as day}
+            <td
+              tabindex="0"
+              data-level={day.level}
+              data-date={day.date}
+              data-selected={selectedMoments.includes(day.date)}
+              title="{day.date}: {day.count} visits"
+              onclick={() => toggleSelectedMoment(day.date)}
+            ></td>
           {/each}
         </tr>
-      </thead>
-      <tbody>
-        {#each weeks as week}
-          <tr>
-            <th>{week.dayName}</th>
-            {#each week.days as day}
-              <td
-                tabindex="0"
-                data-level={day.level}
-                data-date={day.date}
-                data-selected={selectedMoments.includes(day.date)}
-                title="{day.date}: {day.count} visits"
-                onclick={() => toggleSelectedMoment(day.date)}
-              ></td>
-            {/each}
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-  </div>
-{:catch error}
-  <div id="calendar">
-    <p>Error loading calendar: {error.message}</p>
-  </div>
-{/await}
+      {/each}
+    </tbody>
+  </table>
+</div>
 
 <style>
   #calendar {
     margin-block: 3rem 4rem;
     max-width: calc(100vw - 3rem);
     overflow-y: auto;
+    transition: opacity 150ms;
+  }
+  #calendar.loading {
+    opacity: 0.6;
   }
   table {
     border-collapse: separate;

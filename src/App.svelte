@@ -11,16 +11,19 @@
 
   let search: string = $state("");
   let selectedMoments: string[] = $state([]);
-  let history: HistoryByDay | null = $derived.by(() => {
-    return getHistoryByDay(search);
-  });
-  let historyWithEmptyDays;
 
-  function deleteHistoryItem(url: string) {
-    chrome.history.deleteUrl({ url }).then(() => {
-      updateHistory();
+  // Cache the resolved data in state
+  let historyData = $state<HistoryByDay | null>(null);
+  let isLoading = $state(false);
+
+  // Fetch data when search changes
+  $effect(() => {
+    isLoading = true;
+    getHistoryByDay(search, true).then((result) => {
+      historyData = result;
+      isLoading = false;
     });
-  }
+  });
 </script>
 
 <header>
@@ -28,18 +31,14 @@
   <Search bind:value={search} />
 </header>
 <main>
-  <Calendar data={getHistoryByDay(search, true)} bind:selectedMoments />
-  <section class="days">
-    {#if selectedMoments.length > 0}
-      {#await getHistoryByDay(search)}
-        <CardLoading />
-        <CardLoading />
-        <CardLoading />
-      {:then history}
+  {#if historyData}
+    <Calendar data={historyData} bind:selectedMoments {isLoading} />
+    <section class="days">
+      {#if selectedMoments.length > 0}
         {#each selectedMoments as date}
-          {#if history[date] && history[date].length > 0}
+          {#if historyData[date]?.length > 0}
             <Card>
-              <MomentContent {date} items={history[date]} />
+              <MomentContent {date} items={historyData[date]} />
             </Card>
           {:else}
             <Card>
@@ -53,23 +52,26 @@
             </Card>
           {/if}
         {/each}
-      {/await}
-    {:else}
-      {#await getHistoryByDay(search)}
-        <CardLoading />
-        <CardLoading />
-        <CardLoading />
-      {:then history}
-        {#each Object.entries(history) as [date, items]}
-          <Card>
-            <MomentContent {date} {items} />
-          </Card>
+      {:else}
+        {#each Object.entries(historyData) as [date, items]}
+          {#if items.length > 0}
+            <Card>
+              <MomentContent {date} {items} />
+            </Card>
+          {/if}
         {/each}
-      {:catch error}
-        <p>Something went wrong: {error.message}</p>
-      {/await}
-    {/if}
-  </section>
+      {/if}
+    </section>
+  {:else}
+    <div style="margin-block: 3rem; text-align: center;">
+      Loading calendar...
+    </div>
+    <section class="days">
+      <CardLoading />
+      <CardLoading />
+      <CardLoading />
+    </section>
+  {/if}
 </main>
 
 <style>
