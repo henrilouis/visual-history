@@ -76,6 +76,9 @@
 
 <style>
   header {
+    position: sticky;
+    top: 0;
+    background-color: var(--bg-secondary);
     display: flex;
     align-items: center;
     gap: 1rem;
