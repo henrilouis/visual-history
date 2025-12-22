@@ -79,26 +79,20 @@
           </Card>
         {/if}
       {/each}
+    {:else if filteredHistory === null || filteredHistory === undefined}
+      <Card loading={true} />
+      <Card loading={true} />
+      <Card loading={true} />
+    {:else if Object.keys(filteredHistory).length === 0}
+      <Card>
+        <h3>No results found</h3>
+      </Card>
     {:else}
-      {#await filteredHistory}
-        <Card loading={true} />
-        <Card loading={true} />
-        <Card loading={true} />
-      {:then historyData}
-        {#if Object.keys(historyData).length === 0}
-          <Card>
-            <h3>No results found</h3>
-          </Card>
-        {:else}
-          {#each Object.entries(groupHistoryByDay(historyData)) as [date, items]}
-            <Card>
-              <MomentContent {date} {items} {deleteHistoryUrl} />
-            </Card>
-          {/each}
-        {/if}
-      {:catch error}
-        <p>Something went wrong: {error.message}</p>
-      {/await}
+      {#each Object.entries(groupHistoryByDay(filteredHistory)) as [date, items]}
+        <Card>
+          <MomentContent {date} {items} {deleteHistoryUrl} />
+        </Card>
+      {/each}
     {/if}
   </section>
 </main>
