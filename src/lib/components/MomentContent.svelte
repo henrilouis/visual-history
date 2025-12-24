@@ -32,22 +32,29 @@
       animate:flip={{ delay: 150, duration: 150 }}
     >
       <time
-        >{new Date(item.lastVisitTime).toLocaleTimeString([], {
-          hour: "numeric",
-          minute: "numeric",
-          hour12: false,
-        })}</time
+        >{item.lastVisitTime
+          ? new Date(item.lastVisitTime).toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "numeric",
+              hour12: false,
+            })
+          : ""}</time
       >
       <img
-        src={getFaviconURL(new URL(item.url).hostname)}
-        alt={`Favicon for ${new URL(item.url).hostname}`}
+        src={item.url ? getFaviconURL(new URL(item.url).hostname) : ""}
+        alt={`Favicon for ${item.url ? new URL(item.url).hostname : ""}`}
       />
       <div>
         <a href={item.url}>{item.title}</a>
-        <span class="text-secondary">{new URL(item.url).hostname}</span>
+        <span class="text-secondary"
+          >{item.url ? new URL(item.url).hostname : ""}</span
+        >
       </div>
-      <button class="quiet" onclick={() => deleteHistoryUrl(item.url)}
-        >Delete</button
+      <button
+        class="quiet"
+        onclick={() => {
+          item.url ? deleteHistoryUrl(item.url) : null;
+        }}>Delete</button
       >
     </li>
   {/each}
