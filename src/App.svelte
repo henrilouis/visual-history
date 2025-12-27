@@ -1,96 +1,99 @@
 <script lang="ts">
   import Search from "./lib/components/Search.svelte";
   import Card from "./lib/components/Card.svelte";
-  import Calendar from "./lib/components/Calendar.svelte";
+  import DayCalendar from "./lib/components/DayCalendar.svelte";
+  import HourCalendar from "./lib/components/HourCalendar.svelte";
   import MomentContent from "./lib/components/MomentContent.svelte";
-
-  import {
-    getHistory,
-    groupHistoryByDay,
-    fillEmptyDays,
-    deleteUrl,
-  } from "./lib/utils/chrome-api";
-
+  import { historyStore } from "./lib/stores/history.svelte";
   import { dateTimeFormatOptions } from "./lib/utils/general";
 
-  let history: chrome.history.HistoryItem[] = $state([]);
-  let search: string = $state("");
-  let filteredHistory: chrome.history.HistoryItem[] = $derived.by(() => {
-    if (!search) return history;
-    else {
-      return history.filter(
-        (item) =>
-          item.title?.toLowerCase().includes(search.toLowerCase()) ||
-          item.url?.toLowerCase().includes(search.toLowerCase())
-      );
-    }
+  // Initialize data fetch
+  historyStore.fetch();
+
+  // Local binding for search input
+  let searchValue = $state("");
+
+  // Sync search input to store (debounced would be nice for performance)
+  $effect(() => {
+    historyStore.setSearch(searchValue);
   });
-  let selectedMoments: string[] = $state([]);
 
-  function fetchHistory() {
-    getHistory().then((data) => {
-      history = data;
-    });
-  }
-  fetchHistory();
-
-  function deleteUrlFromState(url: string) {
-    history = history.filter((item) => item.url !== url);
-    filteredHistory = filteredHistory.filter((item) => item.url !== url);
-  }
-
-  function deleteHistoryUrl(url: string) {
-    deleteUrl(url).then(() => {
-      deleteUrlFromState(url);
-    });
+  // Format moment key for display (handles both day and hour formats)
+  function formatMomentLabel(key: string): string {
+    if (key.includes("T")) {
+      const [date, hour] = key.split("T");
+      const d = new Date(date);
+      return `${d.toLocaleDateString(undefined, dateTimeFormatOptions)} at ${hour}:00`;
+    }
+    return new Date(key).toLocaleDateString(undefined, dateTimeFormatOptions);
   }
 </script>
 
 <header>
   <h1>Visual history</h1>
-  <Search bind:value={search} />
+  <Search bind:value={searchValue} />
 </header>
 <main>
-  <Calendar
-    data={fillEmptyDays(groupHistoryByDay(filteredHistory), history)}
-    bind:selectedMoments
-  />
+  <div class="calendar-controls">
+    <button
+      class={historyStore.calendarMode === "day" ? "active" : ""}
+      onclick={() => historyStore.setCalendarMode("day")}
+    >
+      Days
+    </button>
+    <button
+      class={historyStore.calendarMode === "hour" ? "active" : ""}
+      onclick={() => historyStore.setCalendarMode("hour")}
+    >
+      Hours
+    </button>
+  </div>
+
+  {#if historyStore.calendarMode === "day"}
+    <DayCalendar
+      data={historyStore.byDayWithEmpty}
+      selectedMoments={historyStore.selectedMoments}
+      onToggleMoment={historyStore.toggleMoment}
+    />
+  {:else}
+    <HourCalendar
+      data={historyStore.byDayAndHourWithEmpty}
+      selectedMoments={historyStore.selectedMoments}
+      onToggleMoment={historyStore.toggleMoment}
+    />
+  {/if}
+
   <section class="days">
-    {#if selectedMoments.length > 0}
-      {@const groupedData = groupHistoryByDay(filteredHistory)}
-      {#each selectedMoments as date}
-        {#if groupedData[date] && groupedData[date].length > 0}
+    {#if historyStore.selectedMoments.length > 0}
+      {#each historyStore.selectedMoments as momentKey}
+        {@const items = historyStore.getItemsForMoment(momentKey)}
+        {#if items.length > 0}
           <Card>
             <MomentContent
-              {date}
-              items={groupedData[date]}
-              {deleteHistoryUrl}
+              date={momentKey}
+              {items}
+              deleteHistoryUrl={historyStore.removeUrl}
             />
           </Card>
         {:else}
           <Card>
-            <h3>
-              {new Date(date).toLocaleDateString(
-                undefined,
-                dateTimeFormatOptions
-              )}
-            </h3>
-            No results for this date
+            <h3>{formatMomentLabel(momentKey)}</h3>
+            No results for this time
           </Card>
         {/if}
       {/each}
-    {:else if filteredHistory === null || filteredHistory === undefined}
+    {:else if historyStore.isLoading}
       <Card loading={true} />
       <Card loading={true} />
       <Card loading={true} />
-    {:else if Object.keys(filteredHistory).length === 0}
+    {:else if Object.keys(historyStore.filtered).length === 0}
       <Card>
         <h3>No results found</h3>
       </Card>
     {:else}
-      {#each Object.entries(groupHistoryByDay(filteredHistory)) as [date, items]}
+      {#each Object.entries(historyStore.byDay) as [date, items]}
         <Card>
-          <MomentContent {date} {items} {deleteHistoryUrl} />
+          <MomentContent {date} {items} deleteHistoryUrl={historyStore.removeUrl} />
         </Card>
       {/each}
     {/if}
@@ -122,6 +125,29 @@
     padding: 0 1rem 1rem 1rem;
     margin-inline: auto;
     max-width: 60rem;
+  }
+  .calendar-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  .calendar-controls button {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--el-border-color-default, #333);
+    background: var(--el-bg-default, transparent);
+    color: var(--text-primary, inherit);
+    border-radius: var(--el-border-radius, 4px);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .calendar-controls button:hover {
+    background: var(--el-bg-hover, #222);
+  }
+  .calendar-controls button.active {
+    background: var(--heatmap-color-2, #39d353);
+    color: var(--bg-primary, #000);
+    border-color: transparent;
   }
   .days {
     display: flex;

@@ -1,0 +1,225 @@
+<script lang="ts">
+  /*
+  24-hour calendar view showing activity by hour.
+  - 24 rows (hours 00-23)
+  - Columns for each day (scrollable horizontally)
+  */
+
+  import type { HistoryByDayAndHour } from "../utils/chrome-api";
+  import type { Attachment } from "svelte/attachments";
+
+  let {
+    data,
+    selectedMoments,
+    onToggleMoment,
+  }: {
+    data: HistoryByDayAndHour;
+    selectedMoments: string[];
+    onToggleMoment: (key: string) => void;
+  } = $props();
+
+  // Generate hour-based key for selection
+  function getHourKey(date: string, hour: number): string {
+    return `${date}T${String(hour).padStart(2, "0")}`;
+  }
+
+  type HourRow = {
+    hour: number;
+    hourLabel: string;
+    cells: {
+      date: string;
+      level: number;
+      count: number;
+      key: string;
+    }[];
+  };
+
+  type CalendarData = {
+    days: { date: string; dayName: string; dayNum: number; month: string }[];
+    hours: HourRow[];
+    months: { name: string; span: number }[];
+  };
+
+  function organizeCalendarData(
+    historyByDayAndHour: HistoryByDayAndHour
+  ): CalendarData {
+    const sortedDates = Object.keys(historyByDayAndHour).sort();
+    if (sortedDates.length === 0) {
+      return { days: [], hours: [], months: [] };
+    }
+
+    // Generate day headers
+    const days = sortedDates.map((dateKey) => {
+      const date = new Date(dateKey);
+      return {
+        date: dateKey,
+        dayName: date.toLocaleDateString(undefined, { weekday: "narrow" }),
+        dayNum: date.getDate(),
+        month: date.toLocaleDateString(undefined, { month: "short" }),
+      };
+    });
+
+    // Calculate month headers with colspan
+    const months: { name: string; span: number }[] = [];
+    let currentMonth = "";
+    let monthSpan = 0;
+
+    for (const day of days) {
+      if (day.month !== currentMonth) {
+        if (currentMonth) {
+          months.push({ name: currentMonth, span: monthSpan });
+        }
+        currentMonth = day.month;
+        monthSpan = 1;
+      } else {
+        monthSpan++;
+      }
+    }
+    if (currentMonth) {
+      months.push({ name: currentMonth, span: monthSpan });
+    }
+
+    // Find max count for level calculation
+    let maxCount = 0;
+    for (const day of Object.values(historyByDayAndHour)) {
+      for (const items of Object.values(day)) {
+        maxCount = Math.max(maxCount, items.length);
+      }
+    }
+
+    // Generate 24 hour rows
+    const hours: HourRow[] = Array.from({ length: 24 }, (_, hour) => ({
+      hour,
+      hourLabel: `${String(hour).padStart(2, "0")}:00`,
+      cells: sortedDates.map((dateKey) => {
+        const hourKey = String(hour).padStart(2, "0");
+        const count = historyByDayAndHour[dateKey]?.[hourKey]?.length ?? 0;
+        const level =
+          maxCount === 0 ? 0 : Math.min(4, Math.ceil((count / maxCount) * 4));
+        return {
+          date: dateKey,
+          level,
+          count,
+          key: getHourKey(dateKey, hour),
+        };
+      }),
+    }));
+
+    return { days, hours, months };
+  }
+
+  const calendarData = $derived(organizeCalendarData(data));
+
+  const scrollRight: Attachment = (element) => {
+    element.scrollLeft = element.scrollWidth;
+  };
+</script>
+
+{#if calendarData.days.length === 0}
+  <p>No history data available to display the calendar.</p>
+{:else}
+  <div
+    id="hour-calendar"
+    class={selectedMoments.length > 0 ? "filtered" : ""}
+    {@attach scrollRight}
+  >
+    <table>
+      <thead>
+        <tr class="months">
+          <th></th>
+          {#each calendarData.months as month}
+            <th colspan={month.span}>{month.name}</th>
+          {/each}
+        </tr>
+        <tr class="days">
+          <th></th>
+          {#each calendarData.days as day}
+            <th title={day.date}>{day.dayNum}</th>
+          {/each}
+        </tr>
+      </thead>
+      <tbody>
+        {#each calendarData.hours as row}
+          <tr>
+            <th>{row.hourLabel}</th>
+            {#each row.cells as cell}
+              <td
+                tabindex="0"
+                data-level={cell.level}
+                data-selected={selectedMoments.includes(cell.key)}
+                title="{cell.date} {row.hourLabel}: {cell.count} visits"
+                onclick={() => onToggleMoment(cell.key)}
+              ></td>
+            {/each}
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
+{/if}
+
+<style>
+  #hour-calendar {
+    margin-block: 3rem 4rem;
+    max-width: calc(100vw - 3rem);
+    overflow-x: auto;
+  }
+  table {
+    border-collapse: separate;
+    border-spacing: 0.25rem;
+    margin: auto;
+    table-layout: fixed;
+  }
+  thead th {
+    font-size: 0.75rem;
+    font-weight: 400;
+    text-align: left;
+  }
+  thead tr.days th {
+    font-size: 0.625rem;
+  }
+  tbody th {
+    font-size: 0.625rem;
+    font-weight: 400;
+    text-align: right;
+    padding-right: 0.25rem;
+    color: var(--text-secondary, #888);
+  }
+  td {
+    width: 1.5rem;
+    height: 1rem;
+    min-width: 1.5rem;
+    min-height: 1rem;
+    background-color: var(--el-bg-default);
+    border-radius: var(--el-border-radius);
+    cursor: pointer;
+    transition: all ease-in-out 50ms;
+    &[data-level="0"]:not([data-selected="true"]) {
+      background-color: var(--heatmap-color-0);
+      pointer-events: none;
+    }
+    &[data-level="1"] {
+      background-color: var(--heatmap-color-1);
+    }
+    &[data-level="2"] {
+      background-color: var(--heatmap-color-2);
+    }
+    &[data-level="3"] {
+      background-color: var(--heatmap-color-3);
+    }
+    &[data-level="4"] {
+      background-color: var(--heatmap-color-4);
+    }
+    &:hover {
+      scale: 1.1;
+    }
+    &:active {
+      scale: 1;
+    }
+    &[data-selected="true"] {
+      outline: var(--el-outline-width-selected) solid
+        var(--el-outline-color-selected);
+      box-shadow: var(--el-box-shadow-selected);
+    }
+  }
+</style>

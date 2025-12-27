@@ -10,10 +10,12 @@
 
   let {
     data,
-    selectedMoments = $bindable(),
+    selectedMoments,
+    onToggleMoment,
   }: {
     data: HistoryByDay;
     selectedMoments: string[];
+    onToggleMoment: (date: string) => void;
   } = $props();
 
   type WeekData = {
@@ -88,15 +90,6 @@
 
   const { weeks, months } = $derived(organizeCalendar(data));
 
-  function toggleSelectedMoment(date: string) {
-    const index = selectedMoments.indexOf(date);
-    if (index === -1) {
-      selectedMoments = [...selectedMoments, date].sort().reverse();
-    } else {
-      selectedMoments = selectedMoments.filter((_, i) => i !== index);
-    }
-  }
-
   const scrollRight: Attachment = (element) => {
     element.scrollLeft = element.scrollWidth;
   };
@@ -130,7 +123,7 @@
                 data-date={day.date}
                 data-selected={selectedMoments.includes(day.date)}
                 title="{day.date}: {day.count} visits"
-                onclick={() => toggleSelectedMoment(day.date)}
+                onclick={() => onToggleMoment(day.date)}
               ></td>
             {/each}
           </tr>
