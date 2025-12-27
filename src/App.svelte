@@ -5,7 +5,9 @@
   import HourCalendar from "./lib/components/HourCalendar.svelte";
   import MomentContent from "./lib/components/MomentContent.svelte";
   import { historyStore } from "./lib/stores/history.svelte";
-  import { dateTimeFormatOptions } from "./lib/utils/general";
+  import { formatMomentKey } from "./lib/utils/general";
+
+  // Todo: add a clear selection button
 
   // Initialize data fetch
   historyStore.fetch();
@@ -13,26 +15,22 @@
   // Local binding for search input
   let searchValue = $state("");
 
-  // Sync search input to store (debounced would be nice for performance)
+  // Sync search input to store
   $effect(() => {
     historyStore.setSearch(searchValue);
   });
-
-  // Format moment key for display (handles both day and hour formats)
-  function formatMomentLabel(key: string): string {
-    if (key.includes("T")) {
-      const [date, hour] = key.split("T");
-      const d = new Date(date);
-      return `${d.toLocaleDateString(undefined, dateTimeFormatOptions)} at ${hour}:00`;
-    }
-    return new Date(key).toLocaleDateString(undefined, dateTimeFormatOptions);
-  }
 </script>
 
 <header>
   <h1>Visual history</h1>
   <Search bind:value={searchValue} />
 </header>
+{#if historyStore.error}
+  <div class="error-banner" role="alert">
+    <span>{historyStore.error}</span>
+    <button onclick={() => historyStore.fetch()}>Retry</button>
+  </div>
+{/if}
 <main>
   <div class="calendar-controls">
     <button
@@ -77,7 +75,7 @@
           </Card>
         {:else}
           <Card>
-            <h3>{formatMomentLabel(momentKey)}</h3>
+            <h3>{formatMomentKey(momentKey)}</h3>
             No results for this time
           </Card>
         {/if}
@@ -93,7 +91,11 @@
     {:else}
       {#each Object.entries(historyStore.byDay) as [date, items]}
         <Card>
-          <MomentContent {date} {items} deleteHistoryUrl={historyStore.removeUrl} />
+          <MomentContent
+            {date}
+            {items}
+            deleteHistoryUrl={historyStore.removeUrl}
+          />
         </Card>
       {/each}
     {/if}
@@ -153,5 +155,25 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+  }
+  .error-banner {
+    background-color: var(--error-bg, #4a1515);
+    color: var(--error-text, #ff6b6b);
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+  .error-banner button {
+    background: transparent;
+    border: 1px solid currentColor;
+    color: inherit;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--el-border-radius, 4px);
+    cursor: pointer;
+  }
+  .error-banner button:hover {
+    background: rgba(255, 255, 255, 0.1);
   }
 </style>

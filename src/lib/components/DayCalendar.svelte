@@ -1,10 +1,4 @@
 <script lang="ts">
-  /* 
-  There should be 2 views: 
-  - Github style calendar view showing days with activity
-  - Github style calendar view showing days/hours with activity
-  */
-
   import type { HistoryByDay } from "../utils/chrome-api";
   import type { Attachment } from "svelte/attachments";
 
@@ -124,6 +118,12 @@
                 data-selected={selectedMoments.includes(day.date)}
                 title="{day.date}: {day.count} visits"
                 onclick={() => onToggleMoment(day.date)}
+                onkeydown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onToggleMoment(day.date);
+                  }
+                }}
               ></td>
             {/each}
           </tr>

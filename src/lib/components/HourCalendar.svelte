@@ -149,6 +149,12 @@
                 data-selected={selectedMoments.includes(cell.key)}
                 title="{cell.date} {row.hourLabel}: {cell.count} visits"
                 onclick={() => onToggleMoment(cell.key)}
+                onkeydown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onToggleMoment(cell.key);
+                  }
+                }}
               ></td>
             {/each}
           </tr>
@@ -187,11 +193,12 @@
   }
   td {
     width: 1.5rem;
-    height: 1rem;
+    height: 1.5rem;
     min-width: 1.5rem;
-    min-height: 1rem;
+    min-height: 1.5rem;
     background-color: var(--el-bg-default);
     border-radius: var(--el-border-radius);
+    corner-shape: var(--el-corner-shape);
     cursor: pointer;
     transition: all ease-in-out 50ms;
     &[data-level="0"]:not([data-selected="true"]) {

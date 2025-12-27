@@ -9,35 +9,15 @@
     deleteHistoryUrl: (url: string) => void;
   } = $props();
 
-  import { dateTimeFormatOptions } from "../utils/general";
+  import { formatMomentKey } from "../utils/general";
   import { blur } from "svelte/transition";
   import { flip } from "svelte/animate";
-  // these animations destroy performance on the large render, need to fix that
-  // before addingh them back in
+  // TODO: re-enable animations after implementing virtualization
   import { getFaviconURL } from "../utils/chrome-api";
-
-  // Format header based on key type (day: "2024-01-15" or hour: "2024-01-15T14")
-  function formatHeader(key: string): string {
-    if (items[0]?.lastVisitTime) {
-      const d = new Date(items[0].lastVisitTime);
-      const dateStr = d.toLocaleDateString(undefined, dateTimeFormatOptions);
-      if (key.includes("T")) {
-        const hour = key.split("T")[1];
-        return `${dateStr} at ${hour}:00`;
-      }
-      return dateStr;
-    }
-    // Fallback to parsing the key
-    if (key.includes("T")) {
-      const [dateKey, hour] = key.split("T");
-      return `${new Date(dateKey).toLocaleDateString(undefined, dateTimeFormatOptions)} at ${hour}:00`;
-    }
-    return new Date(key).toLocaleDateString(undefined, dateTimeFormatOptions);
-  }
 </script>
 
 <header>
-  <h3>{formatHeader(date)}</h3>
+  <h3>{formatMomentKey(date, items[0]?.lastVisitTime)}</h3>
 </header>
 <ol>
   {#each items as item, index (item.id)}
