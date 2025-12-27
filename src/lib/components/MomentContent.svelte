@@ -12,6 +12,8 @@
   import { dateTimeFormatOptions } from "../utils/general";
   import { blur } from "svelte/transition";
   import { flip } from "svelte/animate";
+  // these animations destroy performance on the large render, need to fix that
+  // before addingh them back in
   import { getFaviconURL } from "../utils/chrome-api";
 </script>
 
@@ -27,10 +29,8 @@
 </header>
 <ol>
   {#each items as item, index (item.id)}
-    <li
-      transition:blur={{ duration: 150 }}
-      animate:flip={{ delay: 150, duration: 150 }}
-    >
+    <!-- <li out:blur={{ duration: 150 }} animate:flip={{ delay: 150,duration: 150 }}> -->
+    <li>
       <time
         >{item.lastVisitTime
           ? new Date(item.lastVisitTime).toLocaleTimeString([], {
