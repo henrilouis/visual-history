@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { HistoryByDay } from "../utils/chrome-api";
   import type { Attachment } from "svelte/attachments";
+  import "./calendar.css";
 
   let {
     data,
@@ -92,11 +93,7 @@
 {#if weeks.length === 0}
   <p>No history data available to display the calendar.</p>
 {:else}
-  <div
-    id="calendar"
-    class={selectedMoments.length > 0 ? "filtered" : ""}
-    {@attach scrollRight}
-  >
+  <div class="calendar" {@attach scrollRight}>
     <table>
       <thead>
         <tr>
@@ -136,64 +133,8 @@
 {/if}
 
 <style>
-  #calendar {
-    margin-block: 3rem 4rem;
-    max-width: calc(100vw - 3rem);
-    overflow-y: auto;
-  }
-  table {
-    border-collapse: separate;
-    border-spacing: 0.25rem;
-    margin: auto;
-  }
   td {
     width: 1.5rem;
     height: 1.5rem;
-    min-width: 1.5rem;
-    min-height: 1.5rem;
-    background-color: var(--el-bg-default);
-    border-radius: var(--el-border-radius);
-    corner-shape: var(--el-corner-shape);
-    cursor: pointer;
-    transition: all ease-in-out 50ms;
-    &[data-level="0"]:not([data-selected="true"]) {
-      background-color: var(--heatmap-color-0);
-      pointer-events: none;
-    }
-    &[data-level="1"] {
-      background-color: var(--heatmap-color-1);
-    }
-    &[data-level="2"] {
-      background-color: var(--heatmap-color-2);
-    }
-    &[data-level="3"] {
-      background-color: var(--heatmap-color-3);
-    }
-    &[data-level="4"] {
-      background-color: var(--heatmap-color-4);
-    }
-    &:hover {
-      scale: 1.1;
-    }
-    &:active {
-      scale: 1;
-    }
-    &:focus-visible {
-      outline-color: var(--el-focus-outline-color);
-      outline-width: var(--el-focus-outline-width);
-      outline-offset: var(--el-focus-outline-offset);
-      outline-style: solid;
-    }
-    &[data-selected="true"] {
-      outline: var(--el-outline-width-selected) solid
-        var(--el-outline-color-selected);
-      box-shadow: var(--el-box-shadow-selected);
-    }
-    /* Todo: dim all td's when one or more are selected */
-  }
-  th {
-    font-size: 0.75rem;
-    font-weight: 400;
-    text-align: left;
   }
 </style>

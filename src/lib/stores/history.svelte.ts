@@ -10,19 +10,12 @@ import {
 } from "../utils/chrome-api";
 
 // ============================================
-// Types
-// ============================================
-
-export type CalendarMode = "day" | "hour";
-
-// ============================================
 // Core State
 // ============================================
 
 let rawHistory = $state<chrome.history.HistoryItem[]>([]);
 let searchQuery = $state("");
 let selectedMoments = $state<string[]>([]);
-let calendarMode = $state<CalendarMode>("day");
 let isLoading = $state(false);
 let error = $state<string | null>(null);
 
@@ -97,11 +90,6 @@ function clearSelection(): void {
   selectedMoments = [];
 }
 
-function setCalendarMode(mode: CalendarMode): void {
-  calendarMode = mode;
-  selectedMoments = []; // Clear selection when switching modes
-}
-
 // Helper to get history items for a selected moment (works for both day and hour keys)
 function getItemsForMoment(key: string): chrome.history.HistoryItem[] {
   // Hour key format: "2024-01-15T14"
@@ -127,9 +115,6 @@ export const historyStore = {
   },
   get selectedMoments() {
     return selectedMoments;
-  },
-  get calendarMode() {
-    return calendarMode;
   },
   get isLoading() {
     return isLoading;
@@ -161,6 +146,5 @@ export const historyStore = {
   setSearch,
   toggleMoment,
   clearSelection,
-  setCalendarMode,
   getItemsForMoment,
 };

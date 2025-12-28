@@ -9,11 +9,17 @@
 
   // Todo: add a clear selection button
 
-  // Initialize data fetch
   historyStore.fetch();
-
-  // Local binding for search input
   let searchValue = $state("");
+
+  // Calendar view mode (UI state, not data state)
+  type CalendarMode = "day" | "hour";
+  let calendarMode = $state<CalendarMode>("day");
+
+  function setCalendarMode(mode: CalendarMode) {
+    calendarMode = mode;
+    historyStore.clearSelection();
+  }
 
   // Sync search input to store
   $effect(() => {
@@ -24,6 +30,20 @@
 <header>
   <h1>Visual history</h1>
   <Search bind:value={searchValue} />
+  <div class="button-group">
+    <button
+      class={calendarMode === "day" ? "selected" : ""}
+      onclick={() => setCalendarMode("day")}
+    >
+      Days
+    </button>
+    <button
+      class={calendarMode === "hour" ? "selected" : ""}
+      onclick={() => setCalendarMode("hour")}
+    >
+      Hours
+    </button>
+  </div>
 </header>
 {#if historyStore.error}
   <div class="error-banner" role="alert">
@@ -32,22 +52,7 @@
   </div>
 {/if}
 <main>
-  <div class="calendar-controls">
-    <button
-      class={historyStore.calendarMode === "day" ? "active" : ""}
-      onclick={() => historyStore.setCalendarMode("day")}
-    >
-      Days
-    </button>
-    <button
-      class={historyStore.calendarMode === "hour" ? "active" : ""}
-      onclick={() => historyStore.setCalendarMode("hour")}
-    >
-      Hours
-    </button>
-  </div>
-
-  {#if historyStore.calendarMode === "day"}
+  {#if calendarMode === "day"}
     <DayCalendar
       data={historyStore.byDayWithEmpty}
       selectedMoments={historyStore.selectedMoments}
@@ -115,7 +120,6 @@
   h1 {
     margin: 0;
     font-size: 1.375rem;
-    position: absolute;
     display: none;
   }
   @media (min-width: 840px) {
@@ -127,29 +131,6 @@
     padding: 0 1rem 1rem 1rem;
     margin-inline: auto;
     max-width: 60rem;
-  }
-  .calendar-controls {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 1rem;
-  }
-  .calendar-controls button {
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--el-border-color-default, #333);
-    background: var(--el-bg-default, transparent);
-    color: var(--text-primary, inherit);
-    border-radius: var(--el-border-radius, 4px);
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-  .calendar-controls button:hover {
-    background: var(--el-bg-hover, #222);
-  }
-  .calendar-controls button.active {
-    background: var(--heatmap-color-2, #39d353);
-    color: var(--bg-primary, #000);
-    border-color: transparent;
   }
   .days {
     display: flex;
