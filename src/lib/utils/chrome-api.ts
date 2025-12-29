@@ -146,38 +146,6 @@ export function fillEmptyHours(
   return grouped;
 }
 
-// Convenience function for common use case
-export async function getHistoryByDay(
-  filter: string = "",
-  emptyDays: boolean = false
-): Promise<HistoryByDay> {
-  const history = await getHistory(filter);
-  let grouped = groupHistoryByDay(history);
-
-  if (emptyDays) {
-    const allHistory = filter ? await getHistory("") : history;
-    grouped = fillEmptyDays(grouped, allHistory);
-  }
-
-  return grouped;
-}
-
-// New convenience function for hourly grouping
-export async function getHistoryByDayAndHour(
-  filter: string = "",
-  emptyHours: boolean = false
-): Promise<HistoryByDayAndHour> {
-  const history = await getHistory(filter);
-  let grouped = groupHistoryByDayAndHour(history);
-
-  if (emptyHours) {
-    const allHistory = filter ? await getHistory("") : history;
-    grouped = fillEmptyHours(grouped, allHistory);
-  }
-
-  return grouped;
-}
-
 export async function deleteUrl(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (!chrome?.history) {

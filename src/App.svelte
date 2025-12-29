@@ -29,13 +29,13 @@
   <Search bind:value={searchValue} />
   <div class="button-group">
     <button
-      class={calendarMode === "day" ? "selected" : ""}
+      class:selected={calendarMode === "day"}
       onclick={() => setCalendarMode("day")}
     >
       Days
     </button>
     <button
-      class={calendarMode === "hour" ? "selected" : ""}
+      class:selected={calendarMode === "hour"}
       onclick={() => setCalendarMode("hour")}
     >
       Hours

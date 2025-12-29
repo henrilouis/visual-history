@@ -35,6 +35,10 @@
     oklch(from var(--neutral) 30% c h / 0.15),
     oklch(from var(--neutral) 60% c h / 0.3)
   );
+  --el-bg-selected: light-dark(
+    oklch(from var(--neutral) 20% c h / 0.15),
+    oklch(from var(--neutral) 80% c h / 0.3)
+  );
   --el-bg-primary: light-dark(
     oklch(from var(--neutral) 0% c h),
     oklch(from var(--neutral) 90% c h)
@@ -200,9 +204,10 @@ button {
     outline-style: solid;
   }
   &.selected {
-    outline: var(--el-outline-width-selected) solid
+    background: var(--el-bg-selected);
+    /* outline: var(--el-outline-width-selected) solid
       var(--el-outline-color-selected);
-    box-shadow: var(--el-box-shadow-selected);
+    box-shadow: var(--el-box-shadow-selected); */
   }
 }
 
