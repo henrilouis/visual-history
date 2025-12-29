@@ -92,7 +92,7 @@
       <Card loading={true} />
       <Card loading={true} />
       <Card loading={true} />
-    {:else if Object.keys(historyStore.filtered).length === 0}
+    {:else if historyStore.filtered.length === 0}
       <Card>
         <h3>No results found</h3>
       </Card>

@@ -10,10 +10,20 @@
   } = $props();
 
   import { formatMomentKey } from "../utils/general";
-  import { blur } from "svelte/transition";
-  import { flip } from "svelte/animate";
+  // import { blur } from "svelte/transition";
+  // import { flip } from "svelte/animate";
   // TODO: re-enable animations after implementing virtualization
   import { getFaviconURL } from "../utils/chrome-api";
+
+  // Safely extract hostname from URL, returns empty string if invalid
+  function getHostname(url: string | undefined): string {
+    if (!url) return "";
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return "";
+    }
+  }
 </script>
 
 <header>
@@ -21,6 +31,7 @@
 </header>
 <ol>
   {#each items as item, index (item.id)}
+    {@const hostname = getHostname(item.url)}
     <!-- <li out:blur={{ duration: 150 }} animate:flip={{ delay: 150,duration: 150 }}> -->
     <li>
       <time
@@ -33,14 +44,12 @@
           : ""}</time
       >
       <img
-        src={item.url ? getFaviconURL(new URL(item.url).hostname) : ""}
-        alt={`Favicon for ${item.url ? new URL(item.url).hostname : ""}`}
+        src={hostname ? getFaviconURL(hostname) : ""}
+        alt={hostname ? `Favicon for ${hostname}` : ""}
       />
       <div>
         <a href={item.url}>{item.title}</a>
-        <span class="text-secondary"
-          >{item.url ? new URL(item.url).hostname : ""}</span
-        >
+        <span class="text-secondary">{hostname}</span>
       </div>
       <button
         class="quiet"
