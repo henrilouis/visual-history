@@ -53,13 +53,13 @@
   --el-corner-shape: squircle;
 
   --el-outline-color-selected: light-dark(
-    oklch(from var(--color) 5% c h),
+    oklch(from var(--color) 50% c h),
     oklch(from var(--color) 95% c h)
   );
   --el-outline-width-selected: 0.125rem;
   --el-box-shadow-selected: 0 0 0.75rem
     light-dark(
-      oklch(from var(--color) 5% c h),
+      oklch(from var(--color) 50% c h / 0.5),
       oklch(from var(--color) 95% c h)
     );
 
@@ -185,12 +185,19 @@ button {
   corner-shape: var(--el-corner-shape);
   cursor: pointer;
   transition: all 0.15s ease-in-out;
+  font-size: 0.8125rem;
   &.quiet {
     background: transparent;
   }
   &:hover,
   &.quiet:hover {
     background-color: var(--el-bg-hover);
+  }
+  &:focus-visible {
+    outline-color: var(--el-focus-outline-color);
+    outline-width: var(--el-focus-outline-width);
+    outline-offset: var(--el-focus-outline-offset);
+    outline-style: solid;
   }
   &.selected {
     outline: var(--el-outline-width-selected) solid

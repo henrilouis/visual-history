@@ -7,12 +7,9 @@
   import { historyStore } from "./lib/stores/history.svelte";
   import { formatMomentKey } from "./lib/utils/general";
 
-  // Todo: add a clear selection button
-
   historyStore.fetch();
   let searchValue = $state("");
 
-  // Calendar view mode (UI state, not data state)
   type CalendarMode = "day" | "hour";
   let calendarMode = $state<CalendarMode>("day");
 
@@ -68,6 +65,12 @@
 
   <section class="days">
     {#if historyStore.selectedMoments.length > 0}
+      <div class="selection-info">
+        <button onclick={() => historyStore.clearSelection()}
+          >Clear selection ({historyStore.selectedMoments.length})</button
+        >
+      </div>
+
       {#each historyStore.selectedMoments as momentKey}
         {@const items = historyStore.getItemsForMoment(momentKey)}
         {#if items.length > 0}
@@ -131,6 +134,13 @@
     padding: 0 1rem 1rem 1rem;
     margin-inline: auto;
     max-width: 60rem;
+  }
+
+  .selection-info {
+    font-size: 0.8125rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
   .days {
     display: flex;
