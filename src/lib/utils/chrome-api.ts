@@ -1,4 +1,4 @@
-// Todo: after Jan 7 replace date with temporal API wich should be in chrome then
+// Todo: after Jan 7 replace date with temporal API which should be in chrome then
 
 export async function getHistory(filter: string = "") {
   return new Promise<chrome.history.HistoryItem[]>((resolve, reject) => {
