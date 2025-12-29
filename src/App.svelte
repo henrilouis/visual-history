@@ -66,8 +66,12 @@
   <section class="days">
     {#if historyStore.selectedMoments.length > 0}
       <div class="selection-info">
+        <span>
+          {historyStore.selectedMoments.length}
+          {calendarMode}{historyStore.selectedMoments.length > 1 ? "s" : ""} selected
+        </span>
         <button onclick={() => historyStore.clearSelection()}
-          >Clear selection ({historyStore.selectedMoments.length})</button
+          >Clear selection</button
         >
       </div>
 
@@ -137,10 +141,10 @@
   }
 
   .selection-info {
-    font-size: 0.8125rem;
     display: flex;
     align-items: center;
     gap: 1rem;
+    justify-content: space-between;
   }
   .days {
     display: flex;
