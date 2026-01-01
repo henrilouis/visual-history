@@ -163,9 +163,9 @@ export async function deleteUrl(url: string): Promise<void> {
   });
 }
 
-export function getFaviconURL(hostname: string) {
+export function getFaviconURL(pageUrl: string) {
   const url = new URL(chrome.runtime.getURL("/_favicon/"));
-  url.searchParams.set("pageUrl", `https://${hostname}`);
+  url.searchParams.set("pageUrl", pageUrl);
   url.searchParams.set("size", "16");
   return url.toString();
 }

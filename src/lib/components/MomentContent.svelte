@@ -46,7 +46,7 @@
           : ""}</time
       >
       <img
-        src={hostname ? getFaviconURL(hostname) : ""}
+        src={item.url ? getFaviconURL(item.url) : ""}
         alt={hostname ? `Favicon for ${hostname}` : ""}
       />
       <div>
