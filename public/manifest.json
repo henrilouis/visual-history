@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Visual History",
+  "name": "History heatmap",
   "version": "1.0.0",
   "description": "Visualize and manage your browsing history",
   "permissions": ["history", "favicon"],

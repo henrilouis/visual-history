@@ -67,7 +67,7 @@
 </script>
 
 <header>
-  <h1>Visual history</h1>
+  <h1>History heatmap</h1>
   <Search bind:value={searchValue} />
   <div class="button-group">
     <button

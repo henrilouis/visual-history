@@ -93,24 +93,17 @@
 </script>
 
 {#if weeks.length === 0}
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
-  <div class="skeleton"></div>
+  <div
+    style="display: grid; grid-template-rows: repeat(9, 1.5rem); gap: 0.25rem; padding-block:3rem 1.25rem"
+  >
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+  </div>
 {:else}
   <div class="calendar" {@attach scrollRight}>
     <table>
