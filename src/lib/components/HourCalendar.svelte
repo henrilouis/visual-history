@@ -158,7 +158,8 @@
 {/if}
 
 <style>
-  td {
+  td,
+  th {
     min-width: 0.75rem;
     max-width: 0.75rem;
     min-height: 0.75rem;
