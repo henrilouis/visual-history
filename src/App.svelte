@@ -18,6 +18,48 @@
     historyStore.clearSelection();
   }
 
+  // Infinite scroll state
+  const ITEMS_PER_PAGE = 10;
+  let visibleCount = $state(ITEMS_PER_PAGE);
+  let sentinelEl = $state<HTMLDivElement | null>(null);
+
+  // Reset visible count when data changes
+  $effect(() => {
+    // Track dependencies
+    historyStore.byDay;
+    searchValue;
+    // Reset to initial count
+    visibleCount = ITEMS_PER_PAGE;
+  });
+
+  $effect(() => {
+    if (!sentinelEl) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          const totalItems = Object.keys(historyStore.byDay).length;
+          if (visibleCount < totalItems) {
+            visibleCount = Math.min(visibleCount + ITEMS_PER_PAGE, totalItems);
+          }
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(sentinelEl);
+    return () => observer.disconnect();
+  });
+
+  // Get visible entries
+  const visibleEntries = $derived(
+    Object.entries(historyStore.byDay).slice(0, visibleCount)
+  );
+
+  const hasMore = $derived(
+    visibleCount < Object.keys(historyStore.byDay).length
+  );
+
   // Sync search input to store
   $effect(() => {
     historyStore.setSearch(searchValue);
@@ -101,7 +143,7 @@
         <h3>No results found</h3>
       </Card>
     {:else}
-      {#each Object.entries(historyStore.byDay) as [date, items]}
+      {#each visibleEntries as [date, items]}
         <Card>
           <MomentContent
             {date}
@@ -110,6 +152,13 @@
           />
         </Card>
       {/each}
+
+      <!-- Sentinel element for infinite scroll -->
+      {#if hasMore}
+        <div bind:this={sentinelEl} class="load-more-sentinel">
+          <Card loading={true} />
+        </div>
+      {/if}
     {/if}
   </section>
 </main>
